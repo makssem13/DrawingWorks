@@ -1,0 +1,4 @@
+src/drawingworks.egg-info/
+*.un~
+*~
+src/drawingworks/_version.py

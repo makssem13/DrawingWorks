@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=77.0.3", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drawingworks"
+authors = [
+  { name="Semenii Maksym", email="maks20sem@gmail.com" },
+]
+description = "Vector image editor"
+dependencies = ["recanvas", "jinja2", "msgpack"]
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+dynamic = ["version"]
+
+[tool.setuptools_scm]
+write_to = "src/drawingworks/_version.py"
+
+[project.scripts]
+dw = "drawingworks.__main__:run"
