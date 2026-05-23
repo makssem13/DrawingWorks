@@ -1,0 +1,1 @@
+Plans for 0.8: better architecture: shape class, dependencies between shapes, base for color management system (in future it will be a wrapper for lcms2)
