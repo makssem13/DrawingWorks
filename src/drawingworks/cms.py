@@ -8,7 +8,7 @@ class ColorMode(Enum):
     RGB = auto()
     CMYK = auto()
     HSV = auto()
-    Pantone = auto()
+    SPOT = auto()
 
 class Color:
     def __init__(self, ColorMode, color):

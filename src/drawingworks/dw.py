@@ -8,6 +8,8 @@ import pickle
 import msgpack
 import sys
 
+from . import cms, shape
+
 root = Tk()
 root.title(f"DrawingWorks Alpha {THIS_PROGRAM_VER}")
 root.geometry("800x600")
@@ -60,6 +62,26 @@ def nearest(p, pts):
             best_dist = dist
             best = [px, py]
     return best
+
+def render(sh):
+    match sh.Type:
+        case shape.ShapeType.POINT:
+            x = sh.points[0]
+            y = sh.points[1]
+            r = sh.Radius
+            canvas.create_oval(x-r, y-r, x+r, y+r, fill=sh.FillColor.get_hex(), outline=sh.FillColor.get_hex())
+        case shape.ShapeType.LINE:
+            canvas.create_line(shapes[sh.points[0]].points[0], shapes[sh.points[0]].points[1], shapes[sh.points[1]].points[0], shapes[sh.points[1]].points[1], fill=sh.FillColor, width=sh.BorderWidth)
+        case shape.ShapeType.POLYGON:
+            coords = [shapes[sh.points[x]][0], shapes[sh.points[x]][1] for x in range(len(sh.points))]
+            match sh.NoFill:
+                case False:
+                    canvas.create_polygon(coords, fill=sh.FillColor.get_hex(), outline=sh.BorderColor.get_hex(), width=sh.BorderWidth)
+                case True:
+                    for x in range(0, len(coords), 2):
+                        canvas.create_line(coords[x], coords[x+1], coords[x+2], coords[x+3], fill=sh.FillColor.get_hex(), width=sh.BorderWidth)
+                    canvas.create_line(coords[0], coords[1], coords[-2], coords[-1], fill=sh.FillColor.get_hex(), width=sh.BorderWidth)
+
 
 def draw(event):
     global points, all_points
@@ -116,11 +138,8 @@ def fill(event):
     global points
     changed = False
     if len(points) >= 3:
-        flat_points = []
-        for p in points:
-            flat_points.extend(p)
         canvas.create_polygon(
-            flat_points,
+            points,
             fill=COLOR,
             outline=OUTL,
             width=WIDTH)
