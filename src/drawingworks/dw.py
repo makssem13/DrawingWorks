@@ -7,6 +7,7 @@ from jinja2 import Template
 import pickle
 import msgpack
 import sys
+import copy
 
 from . import cms, shape
 
@@ -38,6 +39,7 @@ IMAGE_FILE = ""
 POINTS_FILE = ""
 PROJECT_FILE = ""
 
+shapes = []
 all_points = []
 points = []
 log = []
@@ -71,9 +73,9 @@ def render(sh):
             r = sh.Radius
             canvas.create_oval(x-r, y-r, x+r, y+r, fill=sh.FillColor.get_hex(), outline=sh.FillColor.get_hex())
         case shape.ShapeType.LINE:
-            canvas.create_line(shapes[sh.points[0]].points[0], shapes[sh.points[0]].points[1], shapes[sh.points[1]].points[0], shapes[sh.points[1]].points[1], fill=sh.FillColor, width=sh.BorderWidth)
+            canvas.create_line(sh.points[0].points[0], sh.points[0].points[1], sh.points[1].points[0], sh.points[1].points[1], fill=sh.FillColor, width=sh.BorderWidth)
         case shape.ShapeType.POLYGON:
-            coords = [shapes[sh.points[x]][0], shapes[sh.points[x]][1] for x in range(len(sh.points))]
+            coords = [sh.points[x].points[0], sh.points[x].points[1] for x in range(len(sh.points))]
             match sh.NoFill:
                 case False:
                     canvas.create_polygon(coords, fill=sh.FillColor.get_hex(), outline=sh.BorderColor.get_hex(), width=sh.BorderWidth)
@@ -91,15 +93,12 @@ def draw(event):
         return
     x = event.x
     y = event.y
-    points.append([x, y])
-    all_points.append([x, y])
+    shapes.append(shape.Shape(shape.ShapeType.POINT, len[shapes], [x, y], COLOR, COLOR, 0, Radius=RADP))
+    points.append(shapes[-1])
+    all_points.append(shapes[-1])
     add_log(["DOT", event.x, event.y])
     r = RADP
-    canvas.create_oval(
-        x-r, y-r,
-        x+r, y+r,
-        fill=COLOR,
-        outline=COLOR)
+    render(shapes[-1])
 
 def draw_hold(event):
     if HOLD: draw(event)
@@ -108,11 +107,12 @@ def cp(m): # cp = Color Picker, m = is Main color
     global COLOR, OUTL
     c = colorchooser.askcolor(title="Choose color")[1]
     if c != None:
+        tco = cms.Color(cms.ColorMode.RGB, list(int(hex_color[i:i+2], 16) for i in (0, 2, 4)))
         if m == True:
-            COLOR = c
+            COLOR = tco
             add_log(["MCOLOR", c])
         else:
-            OUTL = c
+            OUTL = tco
             add_log(["SCOLOR", c])
 
 def rp(event): # Radius Picker
@@ -138,40 +138,40 @@ def fill(event):
     global points
     changed = False
     if len(points) >= 3:
-        canvas.create_polygon(
-            points,
-            fill=COLOR,
-            outline=OUTL,
-            width=WIDTH)
+        shapes.append(shape.Shape(shape.ShapeType.POLYGON, len(shapes), copy.copy(points), COLOR, OUTL, WIDTH))
+        render(shapes[-1])
         changed = True
     elif len(points) == 2:
-        canvas.create_line(points[0][0], points[0][1], points[1][0], points[1][1], fill=OUTL, width=WIDTH)
+        shapes.append(shape.Shape(shape.ShapeType.LINE, len(shapes), copy.copy(points), OUTL, OUTL, WIDTH))
+        render(shapes[-1])
         changed = True
     
     if changed:
-        points = []
+        points.clear()
         add_log(["FILL"])
 
 def line(event):
     global points
     if len(points) >= 2:
         for x in range(0, len(points)-1):
-            canvas.create_line(points[x][0], points[x][1], points[x+1][0], points[x+1][1], fill=OUTL, width=WIDTH)
-        points = []
+            shapes.append(shape.Shape(shape.ShapeType.LINE, [points[x], points[x+1]], copy.copy(points), OUTL, OUTL, WIDTH))
+            render[shapes[-1]
+        points.clear()
         add_log(["LINE"])
 
 def stroke(event):
     global points
+    if len(points) >= 3:
+        shapes.append(shape.Shape(shape.ShapeType.POLYGON, len(shapes), copy.copy(points), COLOR, OUTL, WIDTH, NoFill=True))
+    elif len(points) == 2:
+        shapes.append(shape.Shape(shape.ShapeType.LINE, len(shapes), copy.copy(points), OUTL, OUTL, WIDTH))
     if len(points) >= 2:
-        for x in range(0, len(points)-1):
-            canvas.create_line(points[x][0], points[x][1], points[x+1][0], points[x+1][1], fill=OUTL, width=WIDTH)
-        canvas.create_line(points[0][0], points[0][1], points[-1][0], points[-1][1], fill=OUTL, width=WIDTH)
-        points = []
+        points.clear()
         add_log(["STROKE"])
 
 def clear_fill(event):
     global points
-    points = []
+    points.clear()
     add_log(["CFILL"])
 
 def rerender_all():
