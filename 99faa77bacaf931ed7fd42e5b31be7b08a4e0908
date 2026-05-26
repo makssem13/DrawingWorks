@@ -1,0 +1,4 @@
+To finish developing Alpha 0.8 there are these things to do:
+1. rewrite rerender_all() for the new architecture
+2. break the code into modules in different files
+3. test
