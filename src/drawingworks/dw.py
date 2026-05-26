@@ -75,7 +75,7 @@ def render(sh):
         case shape.ShapeType.LINE:
             canvas.create_line(sh.points[0].points[0], sh.points[0].points[1], sh.points[1].points[0], sh.points[1].points[1], fill=sh.FillColor, width=sh.BorderWidth)
         case shape.ShapeType.POLYGON:
-            coords = [sh.points[x].points[0], sh.points[x].points[1] for x in range(len(sh.points))]
+            coords = [p for x in sh.points for p in x.points]
             match sh.NoFill:
                 case False:
                     canvas.create_polygon(coords, fill=sh.FillColor.get_hex(), outline=sh.BorderColor.get_hex(), width=sh.BorderWidth)
@@ -93,7 +93,7 @@ def draw(event):
         return
     x = event.x
     y = event.y
-    shapes.append(shape.Shape(shape.ShapeType.POINT, len[shapes], [x, y], COLOR, COLOR, 0, Radius=RADP))
+    shapes.append(shape.Shape(shape.ShapeType.POINT, len(shapes), [x, y], COLOR, COLOR, 0, Radius=RADP))
     points.append(shapes[-1])
     all_points.append(shapes[-1])
     add_log(["DOT", event.x, event.y])
@@ -107,7 +107,7 @@ def cp(m): # cp = Color Picker, m = is Main color
     global COLOR, OUTL
     c = colorchooser.askcolor(title="Choose color")[1]
     if c != None:
-        tco = cms.Color(cms.ColorMode.RGB, list(int(hex_color[i:i+2], 16) for i in (0, 2, 4)))
+        tco = cms.Color(cms.ColorMode.RGB, list(int(c[i:i+2], 16) for i in (0, 2, 4)))
         if m == True:
             COLOR = tco
             add_log(["MCOLOR", c])
@@ -154,8 +154,8 @@ def line(event):
     global points
     if len(points) >= 2:
         for x in range(0, len(points)-1):
-            shapes.append(shape.Shape(shape.ShapeType.LINE, [points[x], points[x+1]], copy.copy(points), OUTL, OUTL, WIDTH))
-            render[shapes[-1]
+            shapes.append(shape.Shape(shape.ShapeType.LINE, len(shapes), [points[x], points[x+1]], copy.copy(points), OUTL, OUTL, WIDTH))
+            render(shapes[-1])
         points.clear()
         add_log(["LINE"])
 
@@ -166,6 +166,7 @@ def stroke(event):
     elif len(points) == 2:
         shapes.append(shape.Shape(shape.ShapeType.LINE, len(shapes), copy.copy(points), OUTL, OUTL, WIDTH))
     if len(points) >= 2:
+        render(shapes[-1])
         points.clear()
         add_log(["STROKE"])
 
