@@ -335,7 +335,7 @@ def update():
     root.after(int(1000/60), update)
 
 def dwmain():
-    global status_text, canvas, root
+    global status_text, canvas, root, project_file
     root = Tk()
     root.title(f"DrawingWorks Alpha {THIS_PROGRAM_VER}")
     root.geometry("800x600")
