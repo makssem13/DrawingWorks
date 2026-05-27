@@ -18,6 +18,6 @@ class Color:
     def get_hex(self):
         match self.mode:
             case ColorMode.RGB:
-                return "#{int(self.color[0]):02x}{int(self.color[1]):02x}{int(self.color[2]):02x}"
+                return f"#{int(self.color[0]):02x}{int(self.color[1]):02x}{int(self.color[2]):02x}"
             case _:
                 raise ValueError("Currently not supported :)")

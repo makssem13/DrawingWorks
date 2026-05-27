@@ -20,7 +20,7 @@ class ShapeType(Enum):
 class Shape:
     Type: ShapeType
     z: int
-    points = field(default_factory=list)
+    points: list
     FillColor: Color
     BorderColor: Color
     BorderWidth: int

@@ -1,4 +1,4 @@
-THIS_PROGRAM_VER = 0.7
+THIS_PROGRAM_VER = 0.8
 
 from tkinter import *
 from tkinter import colorchooser, filedialog, simpledialog, messagebox
@@ -11,23 +11,16 @@ import copy
 
 from . import cms, shape
 
-root = Tk()
-root.title(f"DrawingWorks Alpha {THIS_PROGRAM_VER}")
-root.geometry("800x600")
-
-canvas = reCanvas(root, width=800, height=600, bg="white")
-canvas.pack()
-canvas.update()
-root.update()
-
 ST_BAR = Template("Main color: {{mc}} Secondary color: {{sc}}\nPoint radius: {{pr.ljust(5)}} Line width: {{lw}}\nHold-draw: {% if hd %}Enabled {% else %}Disabled{% endif %} Help - ?")
-#defaults
-DCOLOR = "#000000"
-DOUTL = "#000000"
+
+# defaults
+DCOLOR = cms.Color(cms.ColorMode.RGB, [0, 0, 0])
+DOUTL = cms.Color(cms.ColorMode.RGB, [0, 0, 0])
 DRADP = 3
 DWIDTH = 1
 DHOLD = True
 
+# state
 COLOR = DCOLOR
 OUTL = DOUTL
 RADP = DRADP
@@ -58,11 +51,12 @@ def nearest(p, pts):
     x, y = p
     best = None
     best_dist = float("inf")
-    for px, py in pts:
+    for obj in range(len(pts)):
+        px, py = pts[obj].points
         dist = (x - px)**2 + (y - py)**2
         if dist < best_dist:
             best_dist = dist
-            best = [px, py]
+            best = pts[obj]
     return best
 
 def render(sh):
@@ -73,39 +67,48 @@ def render(sh):
             r = sh.Radius
             canvas.create_oval(x-r, y-r, x+r, y+r, fill=sh.FillColor.get_hex(), outline=sh.FillColor.get_hex())
         case shape.ShapeType.LINE:
-            canvas.create_line(sh.points[0].points[0], sh.points[0].points[1], sh.points[1].points[0], sh.points[1].points[1], fill=sh.FillColor, width=sh.BorderWidth)
+            canvas.create_line(sh.points[0].points[0], sh.points[0].points[1], sh.points[1].points[0], sh.points[1].points[1], fill=sh.FillColor.get_hex(), width=sh.BorderWidth)
         case shape.ShapeType.POLYGON:
             coords = [p for x in sh.points for p in x.points]
             match sh.NoFill:
                 case False:
                     canvas.create_polygon(coords, fill=sh.FillColor.get_hex(), outline=sh.BorderColor.get_hex(), width=sh.BorderWidth)
                 case True:
-                    for x in range(0, len(coords), 2):
-                        canvas.create_line(coords[x], coords[x+1], coords[x+2], coords[x+3], fill=sh.FillColor.get_hex(), width=sh.BorderWidth)
-                    canvas.create_line(coords[0], coords[1], coords[-2], coords[-1], fill=sh.FillColor.get_hex(), width=sh.BorderWidth)
+                    for x in range(0, len(coords)-2, 2):
+                        canvas.create_line(coords[x], coords[x+1], coords[x+2], coords[x+3], fill=sh.BorderColor.get_hex(), width=sh.BorderWidth)
+                    canvas.create_line(coords[0], coords[1], coords[len(coords)-2], coords[len(coords)-1], fill=sh.BorderColor.get_hex(), width=sh.BorderWidth)
 
 
-def draw(event):
+def draw(event, nearestm=False, x=None, y=None):
     global points, all_points
-    if event.state & 0x0001:
-        points.append(nearest([event.x, event.y], all_points))
-        add_log(["NEAR", event.x, event.y])
+    if x == None or y == None:
+        x = event.x
+        y = event.y
+    try:
+        nearestm = event.state & 0x0001
+    except:
+        nearestm = nearestm
+    if nearestm:
+        points.append(nearest([x, y], all_points))
+        add_log(["NEAR", x, y])
         return
-    x = event.x
-    y = event.y
     shapes.append(shape.Shape(shape.ShapeType.POINT, len(shapes), [x, y], COLOR, COLOR, 0, Radius=RADP))
     points.append(shapes[-1])
     all_points.append(shapes[-1])
-    add_log(["DOT", event.x, event.y])
+    add_log(["DOT", x, y])
     r = RADP
     render(shapes[-1])
 
 def draw_hold(event):
     if HOLD: draw(event)
 
-def cp(m): # cp = Color Picker, m = is Main color
+def cp(m, myc=None): # cp = Color Picker, m = is Main color
     global COLOR, OUTL
-    c = colorchooser.askcolor(title="Choose color")[1]
+    if myc is None:
+        try: c = colorchooser.askcolor(title="Choose color")[1][1:]
+        except: return
+    else:
+        c = myc[1:]
     if c != None:
         tco = cms.Color(cms.ColorMode.RGB, list(int(c[i:i+2], 16) for i in (0, 2, 4)))
         if m == True:
@@ -154,7 +157,7 @@ def line(event):
     global points
     if len(points) >= 2:
         for x in range(0, len(points)-1):
-            shapes.append(shape.Shape(shape.ShapeType.LINE, len(shapes), [points[x], points[x+1]], copy.copy(points), OUTL, OUTL, WIDTH))
+            shapes.append(shape.Shape(shape.ShapeType.LINE, len(shapes), [points[x], points[x+1]], OUTL, OUTL, WIDTH))
             render(shapes[-1])
         points.clear()
         add_log(["LINE"])
@@ -175,13 +178,14 @@ def clear_fill(event):
     points.clear()
     add_log(["CFILL"])
 
-def rerender_all():
+def redraw_all():
     global COLOR, OUTL, RADP, WIDTH, HOLD, LOG
     COLOR = DCOLOR
     OUTL = DOUTL
     RADP = DRADP
     WIDTH = DWIDTH
     HOLD = DHOLD
+    shapes.clear()
     canvas.clear()
     points.clear()
     all_points.clear()
@@ -189,22 +193,13 @@ def rerender_all():
     for com in log:
         match com[0]:
             case "NEAR":
-                points.append(nearest([com[1], com[2]], all_points))
+                draw(None, x=com[1], y=com[2], nearestm=True)
             case "DOT":
-                x = com[1]
-                y = com[2]
-                r = RADP
-                canvas.create_oval(
-                    x-r, y-r,
-                    x+r, y+r,
-                    fill=COLOR,
-                    outline=COLOR)
-                points.append([x, y])
-                all_points.append([x, y])
+                draw(None, x=com[1], y=com[2])
             case "MCOLOR":
-                COLOR = com[1]
+                cp(True, myc=com[1])
             case "SCOLOR":
-                OUTL = com[1]
+                cp(False, myc=com[1])
             case "RAD":
                 RADP = com[1]
             case "WIDTH":
@@ -220,6 +215,11 @@ def rerender_all():
             case "CFILL":
                 clear_fill(event=None)
     LOG = True
+
+def rerender_all():
+    redraw_all()
+    for el in shapes:
+        render(el)
 
 def pack_log():
     return {"prog": "DrawingWorks", "ver": THIS_PROGRAM_VER, "log": log}
@@ -322,45 +322,56 @@ Ctrl+Alt+Shift+e - load snap data
 
 The deprecated functions aren't supported. They may have bugs or security vulnerabilities and we don't recommend their usage. Use them on your own risks!""")
 
-canvas.focus_set()
-
-status_text = StringVar()
-status_bar = Label(canvas.canvas, textvariable=status_text, justify="left", bg="#FFFFFF", fg="#000000", anchor="w", font=("Consolas", 8))
-status_bar.place(relx=1, rely=1, x=-10, y=-10, anchor="se", height=48)
-
-canvas.bind("<Button-1>", draw)
-canvas.bind("<B1-Motion>", draw_hold)
-canvas.bind("c", lambda event: cp(True))
-canvas.bind("v", lambda event: cp(False))
-canvas.bind("f", fill)
-canvas.bind("F", stroke)
-canvas.bind("d", line)
-canvas.bind("r", rp)
-canvas.bind("R", wp)
-canvas.bind("<Control-z>", undo)
-canvas.bind("<Control-Z>", redo)
-canvas.bind("<Control-E>", open_image)
-canvas.bind("<Control-e>", save_image)
-canvas.bind("<Control-Alt-E>", load_all_points)
-canvas.bind("<Control-Alt-e>", save_all_points)
-canvas.bind("<Control-a>", load_project)
-canvas.bind("<Control-s>", save_project)
-canvas.bind("m", change_hold)
-canvas.bind("n", clear_fill)
-canvas.bind("?", get_help)
-
-if len(sys.argv) > 1:
-    PROJECT_FILE = sys.argv[1]
-    load_project(event=None)
+status_text = None
+canvas = None
+root = None
 
 def update_status_bar():
-    global status_text
-    status_text.set(ST_BAR.render(mc=str(COLOR), sc=str(OUTL), pr=str(RADP), lw=str(WIDTH), hd=HOLD))
+    status_text.set(ST_BAR.render(mc=COLOR.get_hex(), sc=OUTL.get_hex(), pr=str(RADP), lw=str(WIDTH), hd=HOLD))
 
 def update():
     update_status_bar()
     canvas.update()
     root.after(int(1000/60), update)
 
-update()
-root.mainloop()
+def dwmain():
+    global status_text, canvas, root
+    root = Tk()
+    root.title(f"DrawingWorks Alpha {THIS_PROGRAM_VER}")
+    root.geometry("800x600")
+    canvas = reCanvas(root, width=800, height=600, bg="white")
+    canvas.pack()
+    canvas.update()
+    root.update()
+    canvas.focus_set()
+    status_text = StringVar()
+    status_bar = Label(canvas.canvas, textvariable=status_text, justify="left", bg="#FFFFFF", fg="#000000", anchor="w", font=("Consolas", 8))
+    status_bar.place(relx=1, rely=1, x=-10, y=-10, anchor="se", height=48)
+    
+    canvas.bind("<Button-1>", draw)
+    canvas.bind("<B1-Motion>", draw_hold)
+    canvas.bind("c", lambda event: cp(True))
+    canvas.bind("v", lambda event: cp(False))
+    canvas.bind("f", fill)
+    canvas.bind("F", stroke)
+    canvas.bind("d", line)
+    canvas.bind("r", rp)
+    canvas.bind("R", wp)
+    canvas.bind("<Control-z>", undo)
+    canvas.bind("<Control-Z>", redo)
+    canvas.bind("<Control-E>", open_image)
+    canvas.bind("<Control-e>", save_image)
+    canvas.bind("<Control-Alt-E>", load_all_points)
+    canvas.bind("<Control-Alt-e>", save_all_points)
+    canvas.bind("<Control-a>", load_project)
+    canvas.bind("<Control-s>", save_project)
+    canvas.bind("m", change_hold)
+    canvas.bind("n", clear_fill)
+    canvas.bind("?", get_help)
+
+    if len(sys.argv) > 1:
+        PROJECT_FILE = sys.argv[1]
+        load_project(event=None)
+
+    update()
+    root.mainloop()
