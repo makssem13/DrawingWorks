@@ -1,4 +1,10 @@
+![GPLv3+](https://img.shields.io/badge/license-GPLv3-blue)
+![language](https://img.shields.io/badge/language-Python-green)
+![project is alive](https://img.shields.io/badge/dead-no-red)
+[![render: reCanvas](https://img.shields.io/badge/render-reCanvas-yellow)](https://github.com/makssem13/recanvas)
+
 # DrawingWorks
+
 DrawingWorks is a simple vector image editor written in Python using Tkinter.
 
 Features:
