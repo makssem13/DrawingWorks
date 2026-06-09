@@ -19,6 +19,11 @@ license = "GPL-3.0-or-later"
 license-files = ["LICEN[CS]E*"]
 dynamic = ["version"]
 
+[project.urls]
+Homepage = "https://github.com/makssem13/DrawingWorks"
+Repository = "https://github.com/makssem13/DrawingWorks.git"
+Issues = "https://github.com/makssem13/DrawingWorks/issues"
+
 [tool.setuptools_scm]
 write_to = "src/drawingworks/_version.py"
 
