@@ -27,6 +27,7 @@ RADP = DRADP
 WIDTH = DWIDTH
 HOLD = DHOLD
 LOG = True
+RENDER = True
 
 IMAGE_FILE = ""
 POINTS_FILE = ""
@@ -60,6 +61,7 @@ def nearest(p, pts):
     return best
 
 def render(sh):
+    if not RENDER: return
     match sh.Type:
         case shape.ShapeType.POINT:
             x = sh.points[0]
@@ -179,7 +181,7 @@ def clear_fill(event):
     add_log(["CFILL"])
 
 def redraw_all():
-    global COLOR, OUTL, RADP, WIDTH, HOLD, LOG
+    global COLOR, OUTL, RADP, WIDTH, HOLD, LOG, RENDER
     COLOR = DCOLOR
     OUTL = DOUTL
     RADP = DRADP
@@ -190,6 +192,7 @@ def redraw_all():
     points.clear()
     all_points.clear()
     LOG = False
+    RENDER = False
     for com in log:
         match com[0]:
             case "NEAR":
@@ -215,6 +218,7 @@ def redraw_all():
             case "CFILL":
                 clear_fill(event=None)
     LOG = True
+    RENDER = True
 
 def rerender_all():
     redraw_all()
