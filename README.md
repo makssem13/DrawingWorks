@@ -7,9 +7,23 @@
 
 DrawingWorks is a simple vector image editor written in Python using Tkinter.
 
-Features:
-- code is not hard to read (there is not a lot of code)
-- help on "?" (Shift+/)
-- You can learn it in half of hour
+## Features
+
+The editor has this functionality:
+- You can save projects into DWP format (packed with MsgPack)
+- There is a point
+- There is a line
+- There is a polygon
+- You can choose colors
+- You can export project into PNG
+- You can do undo and redo
 
 And currently that's all because it is an Alpha version.
+
+## Name
+
+The editors slogan is *"it is drawing, and it works!"*
+
+The name was made from slogan, the only two verbs in it are "drawing" and "works", and by joining them we got DrawingWorks, the name of the editor.
+
+"Works" here is a verb.
