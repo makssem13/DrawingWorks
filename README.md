@@ -22,7 +22,7 @@ And currently that's all because it is an Alpha version.
 
 ## Name
 
-The editors slogan is *"it is drawing, and it works!"*
+The editors slogan is *"it is drawing, and it just works!"*
 
 The name was made from slogan, the only two verbs in it are "drawing" and "works", and by joining them we got DrawingWorks, the name of the editor.
 
